@@ -1,19 +1,58 @@
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // 服务端 Supabase 客户端
-export function createServerSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lpcxnfymswjetfiiwvmc.supabase.co'
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3huZnltc3dqZXRmaWl3dm1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MjgzOTYsImV4cCI6MjA3MTUwNDM5Nn0.AhOzFEwcdyM7jPObqwJGn5GQt3bQZrUhlyJzBY2Gv44'
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies()
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
     }
-  })
+  )
+}
+
+// 用于 webhook 处理的服务器端客户端，使用 service role key
+export function createServerSupabaseClientWithServiceRole() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return undefined
+        },
+        set(name: string, value: string, options: any) {
+          // 不需要设置 cookie
+        },
+        remove(name: string, options: any) {
+          // 不需要删除 cookie
+        },
+      },
+    }
+  )
 }

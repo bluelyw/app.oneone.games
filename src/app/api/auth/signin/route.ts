@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     
     // 构建回调URL，包含next参数
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

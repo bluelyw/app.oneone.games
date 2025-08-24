@@ -52,7 +52,14 @@
   - ✅ Header 显示用户登录状态
   - ✅ /account 页面显示用户信息
   - ✅ 未登录访问 /account 自动跳转 /login
-- M2：Stripe Checkout & Webhook；数据库记录会员/购买状态
+- ✅ M2：Stripe Checkout & Webhook；数据库记录会员/购买状态
+  - ✅ 集成 Stripe 支付系统（订阅和一次性购买）
+  - ✅ 创建数据库表：profiles, memberships, purchases
+  - ✅ 实现 Webhook 事件处理（支付成功、订阅状态变更）
+  - ✅ 支付状态验证和备用处理机制
+  - ✅ 订阅取消功能
+  - ✅ 会员状态实时更新
+  - ✅ 错误处理和幂等性检查
 - M3：middleware 保护 /games/premium/*；示例 premium 游戏入口页
 - M4：（可选）反向代理到现有子域示例；日志与错误提示
 
@@ -139,8 +146,9 @@ cat src/lib/supabase-client.ts
 - M1 → v0.2.0
 - M1 修复 → v0.2.1
 - M2 → v0.3.0
-- M3 → v0.4.0
-- M4 → v0.5.0
+- M2 完善 → v0.4.0
+- M3 → v0.5.0
+- M4 → v0.6.0
 
 #### 更新版本号的位置
 1. **CHANGELOG.md**：添加新版本记录
@@ -152,6 +160,9 @@ cat src/lib/supabase-client.ts
 - 普通用户访问 /games/premium/foo → 302 到 /billing
 - 会员访问 /games/premium/foo → 200，页面可见
 - 支付成功后 60s 内 /account 能看到已开通状态
+- 订阅取消后立即生效，状态变为"已取消"
+- 重新订阅后立即激活，状态变为"活跃"
+- 防止重复订阅，已有活跃订阅时无法再次订阅
 
 ## GitHub 同步规范
 
@@ -205,8 +216,9 @@ cat src/lib/supabase-client.ts
 ## Stripe 支付配置
 
 ### 产品配置
-- **订阅产品 ID**: `prod_SvLnLyJhWgjFuS` (¥29/月)
-- **一次性购买产品 ID**: `prod_SvLnRsC6q7uf1W` (¥99)
+- **订阅产品 ID**: `prod_SvLnLyJhWgjFuS` ($1.99/月)
+- **价格 ID**: `price_1RzV5e2LpjuxOcVX2VtbPCr7` (订阅)
+- **一次性购买产品 ID**: `prod_SvLnRsC6q7uf1W` (已隐藏)
 
 ### 必需环境变量
 ```bash
@@ -223,3 +235,15 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 https://app.oneone.games/api/webhooks/stripe
 ```
+
+### 支付功能特性
+- **订阅管理**：支持订阅和取消订阅
+- **立即取消**：取消订阅后立即生效，无需等待周期结束
+- **重新订阅**：取消后可重新订阅，开始新的订阅周期
+- **状态同步**：支付成功后自动更新会员状态
+- **错误处理**：提供可读的错误提示，避免静默失败
+- **幂等性**：防止重复处理同一支付事件
+- **备用机制**：Webhook 失败时自动验证支付状态
+
+### 客服支持
+如有支付相关问题，请联系：oneone.games111@gmail.com
