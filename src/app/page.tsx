@@ -54,7 +54,7 @@ export default function Home() {
         {/* 开发工具 */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">开发工具</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link href="/test-payment" className="bg-blue-600 text-white rounded-lg p-4 hover:bg-blue-700 transition-colors">
               <h3 className="text-lg font-semibold mb-2">M2 支付测试</h3>
               <p className="text-blue-100 text-sm">验证 Stripe 支付系统集成</p>
@@ -63,6 +63,11 @@ export default function Home() {
             <Link href="/test-auth" className="bg-green-600 text-white rounded-lg p-4 hover:bg-green-700 transition-colors">
               <h3 className="text-lg font-semibold mb-2">认证测试</h3>
               <p className="text-green-100 text-sm">测试 Supabase Auth 功能</p>
+            </Link>
+
+            <Link href="/games/premium/demo" className="bg-purple-600 text-white rounded-lg p-4 hover:bg-purple-700 transition-colors">
+              <h3 className="text-lg font-semibold mb-2">M3 中间件测试</h3>
+              <p className="text-purple-100 text-sm">测试付费游戏访问控制</p>
             </Link>
           </div>
         </div>
