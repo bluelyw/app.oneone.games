@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
@@ -22,7 +22,7 @@ interface Purchase {
   created_at: string
 }
 
-export default function AccountPage() {
+function AccountPageContent() {
   const [user, setUser] = useState<any>(null)
   const [membership, setMembership] = useState<Membership | null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([])
@@ -356,5 +356,13 @@ export default function AccountPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccountPageContent />
+    </Suspense>
   )
 }

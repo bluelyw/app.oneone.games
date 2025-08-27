@@ -1,11 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
-export default function BillingPage() {
+function BillingPageContent() {
   const [user, setUser] = useState<any>(null)
   const [membership, setMembership] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -325,5 +325,13 @@ export default function BillingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BillingPageContent />
+    </Suspense>
   )
 }

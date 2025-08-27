@@ -3,7 +3,7 @@ import { createServerSupabaseClient, createServerSupabaseClientWithServiceRole }
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-07-30.basil',
 })
 
 export async function POST(request: NextRequest) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
             .update({
               status: subscription.status,
               type: 'subscription',
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              current_period_end: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
               stripe_subscription_id: subscription.id,
               stripe_customer_id: subscription.customer as string,
               updated_at: new Date().toISOString(),
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
               user_id: userId,
               status: subscription.status,
               type: 'subscription',
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              current_period_end: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
               stripe_subscription_id: subscription.id,
               stripe_customer_id: subscription.customer as string,
               created_at: new Date().toISOString(),
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       message: '支付验证完成，会员状态已更新',
       session: {
         id: session.id,
-        subscription: session.subscription?.id,
+        subscription: typeof session.subscription === 'string' ? session.subscription : session.subscription?.id,
         status: session.status
       }
     })

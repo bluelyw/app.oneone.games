@@ -3,7 +3,7 @@ import { createServerSupabaseClientWithServiceRole } from '@/lib/supabase-server
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-07-30.basil',
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -124,60 +124,54 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
     if (subscription) {
       console.log('Processing subscription:', subscription.id, 'status:', subscription.status)
       
-              // 先检查是否已有该用户的会员记录
-        const { data: existingMembership } = await supabase
+      // 先检查是否已有该用户的会员记录
+      const { data: existingMembership } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (existingMembership) {
+        // 更新现有记录
+        const { data: result, error } = await supabase
           .from('memberships')
-          .select('*')
+          .update({
+            status: subscription.status,
+            type: 'subscription',
+            current_period_end: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
+            stripe_subscription_id: subscription.id,
+            stripe_customer_id: subscription.customer as string,
+            updated_at: new Date().toISOString(),
+          })
           .eq('user_id', userId)
-          .single()
+          .select()
 
-        if (existingMembership) {
-          // 更新现有记录
-          const { data: result, error } = await supabase
-            .from('memberships')
-            .update({
-              status: subscription.status,
-              type: 'subscription',
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              stripe_subscription_id: subscription.id,
-              stripe_customer_id: subscription.customer as string,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('user_id', userId)
-            .select()
-
-          if (error) {
-            console.error('Error updating membership:', error)
-          } else {
-            console.log('Successfully updated membership:', result)
-          }
+        if (error) {
+          console.error('Error updating membership:', error)
         } else {
-          // 创建新记录
-          const { data: result, error } = await supabase
-            .from('memberships')
-            .insert({
-              user_id: userId,
-              status: subscription.status,
-              type: 'subscription',
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              stripe_subscription_id: subscription.id,
-              stripe_customer_id: subscription.customer as string,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .select()
-
-          if (error) {
-            console.error('Error creating membership:', error)
-          } else {
-            console.log('Successfully created membership:', result)
-          }
+          console.log('Successfully updated membership:', result)
         }
-
-      if (error) {
-        console.error('Error upserting membership:', error)
       } else {
-        console.log('Successfully upserted membership:', result)
+        // 创建新记录
+        const { data: result, error } = await supabase
+          .from('memberships')
+          .insert({
+            user_id: userId,
+            status: subscription.status,
+            type: 'subscription',
+            current_period_end: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
+            stripe_subscription_id: subscription.id,
+            stripe_customer_id: subscription.customer as string,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+
+        if (error) {
+          console.error('Error creating membership:', error)
+        } else {
+          console.log('Successfully created membership:', result)
+        }
       }
     }
   }
@@ -214,7 +208,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription, supa
     user_id: membership.user_id,
     status: subscription.status,
     type: 'subscription',
-    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    current_period_end: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
     stripe_subscription_id: subscription.id,
     stripe_customer_id: subscription.customer as string,
     updated_at: new Date().toISOString(),
@@ -236,15 +230,15 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supa
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, supabase: any) {
-  if (invoice.subscription) {
-    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+  if ((invoice as any).subscription) {
+    const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string)
     await handleSubscriptionUpdated(subscription, supabase)
   }
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, supabase: any) {
-  if (invoice.subscription) {
-    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+  if ((invoice as any).subscription) {
+    const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string)
     await handleSubscriptionUpdated(subscription, supabase)
   }
 }
