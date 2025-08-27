@@ -31,7 +31,7 @@ function BillingPageContent() {
         console.log('User found:', user.email)
         setUser(user)
 
-        // 获取会员状态
+        // Get membership status
         const response = await fetch('/api/account/data')
         if (response.ok) {
           const data = await response.json()
@@ -51,36 +51,36 @@ function BillingPageContent() {
   }, [router])
 
   useEffect(() => {
-    // 检查 URL 参数
+    // Check URL parameters
     if (searchParams.get('canceled')) {
-      setError('支付已取消')
+      setError('Payment was canceled')
     }
   }, [searchParams])
 
   const getMembershipStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
-      active: '活跃',
-      past_due: '逾期',
-      canceled: '已取消',
-      incomplete: '未完成',
-      incomplete_expired: '未完成已过期',
-      trialing: '试用中',
-      unpaid: '未支付'
+      active: 'Active',
+      past_due: 'Past Due',
+      canceled: 'Canceled',
+      incomplete: 'Incomplete',
+      incomplete_expired: 'Expired',
+      trialing: 'Trial',
+      unpaid: 'Unpaid'
     }
     return statusMap[status] || status
   }
 
   const getMembershipTypeText = (type: string) => {
-    return type === 'subscription' ? '订阅会员' : '一次性购买'
+    return type === 'subscription' ? 'Premium Membership' : 'One-time Purchase'
   }
 
   const handleCancelSubscription = async () => {
     if (!membership) {
-      setError('没有活跃的订阅')
+      setError('No active subscription found')
       return
     }
 
-    if (!confirm('确定要取消订阅吗？取消后仍可使用到当前计费周期结束。')) {
+    if (!confirm('Are you sure you want to cancel your subscription? You can resubscribe anytime.')) {
       return
     }
 
@@ -99,12 +99,12 @@ function BillingPageContent() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || '取消订阅失败')
+        throw new Error(data.error || 'Failed to cancel subscription')
       }
 
       setSuccess(data.message)
       
-      // 刷新会员状态
+      // Refresh membership status
       const accountResponse = await fetch('/api/account/data')
       if (accountResponse.ok) {
         const accountData = await accountResponse.json()
@@ -115,7 +115,7 @@ function BillingPageContent() {
 
     } catch (error) {
       console.error('Cancel subscription error:', error)
-      setError(error instanceof Error ? error.message : '取消订阅失败')
+      setError(error instanceof Error ? error.message : 'Failed to cancel subscription')
     } finally {
       setProcessing(false)
     }
@@ -123,7 +123,7 @@ function BillingPageContent() {
 
   const handleSubscribe = async (priceId: string, type: 'subscription' | 'one_time') => {
     if (!user) {
-      setError('请先登录')
+      setError('Please log in first')
       return
     }
 
@@ -146,21 +146,19 @@ function BillingPageContent() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || '创建支付会话失败')
+        throw new Error(data.error || 'Failed to create payment session')
       }
 
-
-
       if (data.url) {
-        // 重定向到 Stripe Checkout
+        // Redirect to Stripe Checkout
         window.location.href = data.url
       } else {
-        throw new Error('未收到支付链接')
+        throw new Error('No payment URL received')
       }
 
     } catch (error) {
       console.error('Payment error:', error)
-      setError(error instanceof Error ? error.message : '支付处理失败')
+      setError(error instanceof Error ? error.message : 'Payment processing failed')
     } finally {
       setProcessing(false)
     }
@@ -168,11 +166,11 @@ function BillingPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">加载中...</p>
+            <p className="mt-2 text-sm text-gray-600">Loading...</p>
           </div>
         </div>
       </div>
@@ -184,143 +182,261 @@ function BillingPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">会员订阅</h1>
-          <p className="mt-2 text-gray-600">选择适合您的会员计划</p>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Premium Membership</h1>
+          <p className="text-lg text-gray-600">Unlock unlimited access to premium games and exclusive content</p>
         </div>
 
-        {/* 错误和成功提示 */}
+        {/* Error and Success Messages */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-red-800">{error}</p>
             </div>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-green-800">{success}</p>
-              </div>
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-green-800">{success}</p>
             </div>
           </div>
         )}
 
-        {/* 当前状态 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">当前状态</h2>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm text-gray-600">会员类型</p>
-              <p className="text-lg font-medium text-gray-900">
+        {/* Current Status */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-100">
+          <div className="flex items-center mb-6">
+            <div className="flex-shrink-0">
+              <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <h2 className="text-xl font-semibold text-gray-900">Current Status</h2>
+              <p className="text-sm text-gray-600">Your membership information</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-sm font-medium text-gray-600 mb-1">Membership Type</p>
+              <p className="text-lg font-semibold text-gray-900">
                 {membership?.status === 'canceled' 
-                  ? '免费用户' 
+                  ? 'Free User' 
                   : membership 
                     ? `${getMembershipTypeText(membership.type)} - ${getMembershipStatusText(membership.status)}` 
-                    : '免费用户'}
+                    : 'Free User'}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600">到期时间</p>
-              <p className="text-lg font-medium text-gray-900">
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-sm font-medium text-gray-600 mb-1">Expiry Date</p>
+              <p className="text-lg font-semibold text-gray-900">
                 {membership?.status === 'active' && membership?.current_period_end 
-                  ? new Date(membership.current_period_end).toLocaleString('zh-CN') 
+                  ? new Date(membership.current_period_end).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })
                   : membership?.status === 'canceled' 
-                    ? '已取消' 
-                    : '-'}
+                    ? 'Canceled' 
+                    : 'N/A'}
               </p>
             </div>
           </div>
           
-          {/* 取消订阅按钮 */}
+          {/* Cancel Subscription Button */}
           {membership && membership.status === 'active' && (
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 pt-6">
               <button
                 onClick={handleCancelSubscription}
                 disabled={processing}
-                className="w-full py-2 px-4 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 border border-red-300 rounded-xl text-sm font-medium text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {processing ? '处理中...' : '取消订阅'}
+                {processing ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-red-700" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </div>
+                ) : (
+                  'Cancel Subscription'
+                )}
               </button>
               <p className="text-xs text-gray-500 mt-2 text-center">
-                取消后立即结束订阅，可以重新订阅
+                Cancel immediately and resubscribe anytime
               </p>
             </div>
           )}
         </div>
 
-        {/* 会员计划 */}
+        {/* Membership Plans */}
         <div className="mb-8">
-          {/* 专业版订阅 */}
-          <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-blue-500 relative">
+          {/* Premium Subscription */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-blue-500 relative overflow-hidden">
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">
-                推荐
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                Most Popular
               </span>
             </div>
+            
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">专业版订阅</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">
-                $1.99<span className="text-lg font-normal text-gray-600">/月</span>
+              <div className="flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-blue-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <h3 className="text-2xl font-bold text-gray-900">Premium Membership</h3>
               </div>
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
-                <li>✓ 所有基础功能</li>
-                <li>✓ 高级游戏访问</li>
-                <li>✓ 优先客服支持</li>
-                <li>✓ 无广告体验</li>
-                <li>✓ 专属内容</li>
-              </ul>
+              
+              <div className="text-4xl font-bold text-gray-900 mb-2">
+                $1.99<span className="text-xl font-normal text-gray-600">/month</span>
+              </div>
+              
+              <p className="text-gray-600 mb-6">Unlimited access to all premium games</p>
+              
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Access to all premium games</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Ad-free gaming experience</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Priority customer support</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Exclusive content and features</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Cancel anytime</span>
+                </div>
+              </div>
+              
               {membership && membership.status === 'active' ? (
-                <div className="w-full py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-gray-100 cursor-not-allowed">
-                  已有活跃订阅
+                <div className="w-full py-3 px-4 border border-gray-300 rounded-xl text-sm font-medium text-gray-500 bg-gray-100 cursor-not-allowed">
+                  Active Subscription
                 </div>
               ) : (
                 <button 
                   onClick={() => handleSubscribe('price_1RzV5e2LpjuxOcVX2VtbPCr7', 'subscription')}
                   disabled={processing}
-                  className="w-full py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
                 >
-                  {processing ? '处理中...' : '选择专业版'}
+                  {processing ? (
+                    <div className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </div>
+                  ) : (
+                    'Start Premium Membership'
+                  )}
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* 支付说明 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">支付说明</h2>
-          <div className="text-sm text-gray-600 space-y-2">
-            <p>• 支持信用卡/借记卡支付</p>
-            <p>• 订阅将按月自动续费，除非您取消</p>
-            <p>• 您可以随时取消订阅，取消后立即结束订阅</p>
-            <p>• 取消后可以重新订阅，重新开始计算订阅周期</p>
-            <p>• 所有价格均包含适用税费</p>
-            <p>• 退款政策：7天内无条件退款</p>
-            <p>• 支付完成后，会员状态将在60秒内更新</p>
-            <p>• 如有疑问，请咨询：<a href="mailto:oneone.games111@gmail.com" className="text-blue-600 hover:text-blue-800 underline">oneone.games111@gmail.com</a></p>
+        {/* Payment Information */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-100">
+          <div className="flex items-center mb-6">
+            <svg className="w-8 h-8 text-green-600 mr-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Payment Information</h2>
+              <p className="text-sm text-gray-600">Secure payment processing</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm text-gray-700">Secure credit/debit card payment</span>
+              </div>
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm text-gray-700">Auto-renewal until canceled</span>
+              </div>
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm text-gray-700">Cancel anytime</span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm text-gray-700">7-day money-back guarantee</span>
+              </div>
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm text-gray-700">Instant access after payment</span>
+              </div>
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-blue-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+                <span className="text-sm text-gray-700">
+                  Questions? Contact us at{' '}
+                  <a href="mailto:oneone.games111@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                    oneone.games111@gmail.com
+                  </a>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Navigation */}
         <div className="text-center">
-          <Link href="/" className="text-sm text-gray-600 hover:text-gray-500">
-            ← 返回首页
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-500 transition-colors"
+          >
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back to Home
           </Link>
         </div>
       </div>

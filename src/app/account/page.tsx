@@ -413,7 +413,7 @@ function AccountPageContent() {
               </Link>
               
               <Link 
-                href="/games/premium/demo"
+                href="/games/premium/fishygame"
                 className="flex items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200"
               >
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
