@@ -24,6 +24,192 @@
 - 支付：Stripe（Checkout + Billing Portal + Webhooks）
 - 安全：受控路由 + 中间件；勿将付费资源放 /public 暴露
 
+## Vercel 部署规范
+
+### 环境差异问题
+本地开发环境和 Vercel 线上构建环境存在差异，必须遵循以下规范：
+
+#### 1. Google Fonts 使用规范
+**问题**: 本地可以访问 Google Fonts，但 Vercel 构建时可能网络超时
+**解决方案**: 
+- ❌ 避免使用 `next/font/google` 的在线字体
+- ✅ 使用系统默认字体或本地字体文件
+- ✅ 在 `layout.tsx` 中使用 `font-sans` 类名
+
+```typescript
+// ❌ 避免这样做
+import { Inter } from 'next/font/google'
+const inter = Inter({ subsets: ['latin'] })
+
+// ✅ 推荐这样做
+<body className="font-sans">
+```
+
+#### 2. Stripe API 版本规范
+**问题**: Stripe 定期更新 API 版本，本地和线上版本不一致
+**解决方案**:
+- ✅ 始终使用最新的稳定 API 版本
+- ✅ 定期检查并更新所有 Stripe 相关文件
+- ✅ 当前版本：`2025-07-30.basil`
+
+```typescript
+// ✅ 正确的 API 版本配置
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-07-30.basil',
+})
+```
+
+#### 3. TypeScript 类型兼容性
+**问题**: Stripe API 版本更新后类型定义变化
+**解决方案**:
+- ✅ 使用类型断言处理兼容性问题
+- ✅ 对可能变化的属性使用 `(object as any).property`
+
+```typescript
+// ✅ 处理类型兼容性
+current_period_end: (subscription as any).current_period_end 
+  ? new Date((subscription as any).current_period_end * 1000).toISOString() 
+  : null,
+```
+
+#### 4. useSearchParams() Suspense 边界
+**问题**: Next.js 15 要求 `useSearchParams()` 必须包装在 Suspense 边界中
+**解决方案**:
+- ✅ 所有使用 `useSearchParams()` 的页面必须包装在 Suspense 中
+- ✅ 创建包装组件处理 Suspense 边界
+
+```typescript
+// ✅ 正确的 Suspense 包装
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  )
+}
+
+function PageContent() {
+  const searchParams = useSearchParams()
+  // 组件逻辑
+}
+```
+
+#### 5. 测试文件管理
+**问题**: 测试页面在线上环境不需要，可能导致构建问题
+**解决方案**:
+- ✅ 完成功能测试后及时删除测试页面
+- ✅ 测试页面放在独立目录，便于批量删除
+- ✅ 避免在测试页面中使用生产环境不支持的代码
+
+### 部署前检查清单
+在推送到 GitHub 触发 Vercel 部署前，必须完成以下检查：
+
+#### 代码检查
+- [ ] 运行 `npm run build` 确保本地构建成功
+- [ ] 检查所有 TypeScript 类型错误
+- [ ] 验证 ESLint 规则通过
+- [ ] 确认没有使用 Google Fonts 在线字体
+- [ ] 验证 Stripe API 版本一致
+
+#### 环境变量检查
+- [ ] 确认 Vercel 环境变量已配置
+- [ ] 验证 Stripe Webhook 端点正确
+- [ ] 检查 Supabase 连接配置
+
+#### 功能测试
+- [ ] 本地测试登录/注册流程
+- [ ] 验证支付流程正常工作
+- [ ] 测试中间件保护逻辑
+- [ ] 确认会员状态更新正常
+
+### 常见部署问题及解决方案
+
+#### 构建失败：Google Fonts 超时
+```bash
+# 错误信息
+Failed to fetch `Inter` from Google Fonts.
+```
+**解决方案**: 移除 `next/font/google` 导入，使用系统字体
+
+#### 构建失败：Stripe API 版本不匹配
+```bash
+# 错误信息
+Type '"2024-12-18.acacia"' is not assignable to type '"2025-07-30.basil"'
+```
+**解决方案**: 更新所有 Stripe 文件到最新 API 版本
+
+#### 构建失败：useSearchParams() 缺少 Suspense
+```bash
+# 错误信息
+useSearchParams() should be wrapped in a suspense boundary
+```
+**解决方案**: 为使用 `useSearchParams()` 的页面添加 Suspense 包装
+
+#### 运行时错误：TypeScript 类型错误
+```bash
+# 错误信息
+Property 'current_period_end' does not exist on type 'Subscription'
+```
+**解决方案**: 使用类型断言 `(subscription as any).current_period_end`
+
+### 部署最佳实践
+1. **本地构建测试**: 每次提交前运行 `npm run build`
+2. **渐进式部署**: 小批量提交，避免大规模变更
+3. **环境一致性**: 确保本地和线上环境配置一致
+4. **监控部署**: 关注 Vercel 部署日志，及时发现问题
+5. **回滚准备**: 保留可回滚的版本，应对紧急问题
+
+### 部署问题复盘（v0.4.0 经验总结）
+
+#### 问题背景
+在 v0.4.0 版本部署到 Vercel 时遇到了一系列构建失败问题，这些问题在本地开发环境中没有出现，但在 Vercel 的构建环境中暴露出来。
+
+#### 问题链分析
+1. **根本原因**: 本地开发环境和 Vercel 构建环境存在差异
+2. **触发因素**: 代码中使用了本地环境支持但线上环境不支持的特性
+3. **连锁反应**: 一个问题修复后，下一个问题暴露，形成问题链
+
+#### 具体问题及解决方案
+
+##### 问题 1: Google Fonts 连接超时
+- **现象**: `Failed to fetch 'Inter' from Google Fonts`
+- **原因**: Vercel 构建时网络环境与本地不同，无法访问 Google Fonts
+- **解决**: 移除 `next/font/google` 依赖，使用系统默认字体
+
+##### 问题 2: Stripe API 版本不匹配
+- **现象**: `Type '"2024-12-18.acacia"' is not assignable to type '"2025-07-30.basil"'`
+- **原因**: Stripe 定期更新 API 版本，本地和线上版本不一致
+- **解决**: 更新所有 Stripe 相关文件到最新 API 版本
+
+##### 问题 3: TypeScript 类型错误
+- **现象**: `Property 'current_period_end' does not exist on type 'Subscription'`
+- **原因**: Stripe API 版本更新后，类型定义发生变化
+- **解决**: 使用类型断言 `(subscription as any).current_period_end`
+
+##### 问题 4: useSearchParams() Suspense 边界
+- **现象**: `useSearchParams() should be wrapped in a suspense boundary`
+- **原因**: Next.js 15 对 `useSearchParams()` 使用有严格要求
+- **解决**: 为所有使用 `useSearchParams()` 的页面添加 Suspense 包装
+
+##### 问题 5: 测试文件残留
+- **现象**: 测试页面包含过时代码导致构建问题
+- **原因**: M1、M2 的测试页面在 M3 完成后不再需要
+- **解决**: 删除过时的测试页面
+
+#### 经验教训
+1. **环境差异意识**: 始终考虑本地和线上环境的差异
+2. **渐进式修复**: 一个问题一个问题地修复，避免同时修改多个地方
+3. **本地构建验证**: 每次修复后都要在本地运行 `npm run build` 验证
+4. **依赖版本管理**: 定期检查和更新第三方依赖的版本
+5. **代码清理**: 及时清理不再需要的测试文件和过时代码
+
+#### 预防措施
+1. **建立部署检查清单**: 每次部署前必须完成所有检查项
+2. **环境一致性测试**: 定期验证本地和线上环境的一致性
+3. **依赖版本锁定**: 使用 package-lock.json 锁定依赖版本
+4. **代码审查**: 重点关注可能影响构建的代码变更
+5. **监控和告警**: 设置部署失败的通知机制
+
 ## 环境变量（本地 .env.local，勿提交）
 - NEXT_PUBLIC_SUPABASE_URL=
 - NEXT_PUBLIC_SUPABASE_ANON_KEY=
