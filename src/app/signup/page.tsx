@@ -165,7 +165,7 @@ export default function SignupPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">What you'll get</h3>
+                <h3 className="text-sm font-medium text-green-800">What you&apos;ll get</h3>
                                  <ul className="text-sm text-green-700 mt-1 space-y-1">
                    <li>• Access to premium games</li>
                    <li>• Personalized gaming experience</li>

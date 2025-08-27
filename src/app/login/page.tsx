@@ -55,7 +55,7 @@ export default function LoginPage() {
             Sign in to your OneOne Games account
           </p>
           <p className="text-sm text-gray-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
               Sign up here
             </Link>
@@ -145,7 +145,7 @@ export default function LoginPage() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-blue-800">How it works</h3>
                 <p className="text-sm text-blue-700 mt-1">
-                  We'll send you a secure magic link to your email. Click the link to sign in instantly - no password needed!
+                  We&apos;ll send you a secure magic link to your email. Click the link to sign in instantly - no password needed!
                 </p>
               </div>
             </div>

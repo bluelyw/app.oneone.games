@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
@@ -33,7 +33,7 @@ function AccountPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     const supabase = createClient()
     
     try {
@@ -72,11 +72,11 @@ function AccountPageContent() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [router])
 
   useEffect(() => {
     loadUserData()
-  }, [router])
+  }, [router, loadUserData])
 
   useEffect(() => {
     // Check for payment success parameters
@@ -141,7 +141,7 @@ function AccountPageContent() {
         }, 3000)
       }
     }
-  }, [searchParams])
+  }, [searchParams, loadUserData])
 
   const getMembershipStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
