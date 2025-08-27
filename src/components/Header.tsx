@@ -19,7 +19,7 @@ export default function Header() {
         const { data: { user }, error } = await supabase.auth.getUser()
         
         if (error) {
-          // 如果是 AuthSessionMissingError，这是正常的，表示用户未登录
+          // If it's AuthSessionMissingError, this is normal, indicating user is not logged in
           if (error.message.includes('Auth session missing')) {
             console.log('No active session found')
             setUser(null)
@@ -39,7 +39,7 @@ export default function Header() {
 
     checkUser()
 
-    // 监听认证状态变化
+    // Listen for auth state changes
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -107,26 +107,26 @@ export default function Header() {
                   {user.email}
                 </span>
                 <Link href="/account" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                  账户
+                  Account
                 </Link>
                 <Link href="/billing" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                  会员
+                  Membership
                 </Link>
                 <button
                   onClick={handleSignOut}
                   disabled={isLoading}
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium disabled:opacity-50"
                 >
-                  {isLoading ? '退出中...' : '退出'}
+                  {isLoading ? 'Signing out...' : 'Sign Out'}
                 </button>
               </>
             ) : (
               <>
                 <Link href="/login" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                  登录
+                  Sign In
                 </Link>
                 <Link href="/signup" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                  注册
+                  Sign Up
                 </Link>
               </>
             )}

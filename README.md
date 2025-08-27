@@ -1,7 +1,7 @@
 # app.oneone.games
 
 ## 背景
-- Homepage (www.oneone.games)：Hugo/静态，做营销与入口。
+- Homepage (www.oneone.games)：静态页面，做营销与入口。
 - 本项目 (app.oneone.games / Next.js)：承载账号、支付/会员、付费游戏访问控制。
 
 ## 目标
